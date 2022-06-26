@@ -18,3 +18,12 @@ def test_post_signup_2fa_disabled():
 
     assert response.status_code == 200
     assert response.json() == {"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": False}
+
+
+def test_post_signup_2fa_enabled():
+    # Expecting Form inputs, using data parameter
+    response = client.post(app.url_path_for("signup"),
+                           data={"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": "true"})
+
+    assert response.status_code == 200
+    assert response.json() == {"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": True}
