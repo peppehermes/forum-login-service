@@ -1,7 +1,23 @@
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Depends, HTTPException
+from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
 
+from sql import models, crud, schemas
+from sql.database import SessionLocal, engine
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        # Make sure the connection is always closed after any request
+        db.close()
 
 
 @app.get("/")
@@ -9,11 +25,24 @@ def root():
     return {"message": "Hello World!"}
 
 
-@app.post("/signup/")
-async def signup(username: str = Form(), password: str = Form(), two_factor_enabled: bool = Form()):
-    response = {"username": username, "password": password, "two_factor_enabled": two_factor_enabled}
+# Not using async because SQLAlchemy has not integrated support for using await directly.
+# Should use encode/databases to connect to DBs using async and await.
+@app.post("/signup/", response_model=schemas.User)
+def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """
+    Create DB session before each request in the dependency with yield, close it afterwards.
+    Return a schemas.User model, which filters out the password param from input schemas.UserCreate.
+    :param user:
+    :param db:
+    :return:
+    """
+    db_user = crud.get_user_by_email(db, email=user.email)
 
-    return response
+    # Check if provided email is already registered
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    return crud.create_user(db=db, user=user)
 
 
 @app.post("/login/")

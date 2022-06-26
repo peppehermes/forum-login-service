@@ -1,7 +1,7 @@
 # SQLAlchemy models
 from sqlalchemy import Column, Boolean, Integer, String
 
-from database import Base
+from .database import Base
 
 
 class User(Base):

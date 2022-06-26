@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class UserBase(BaseModel):
     email: str
+    two_factor_enabled: bool
 
 
 class UserCreate(UserBase):
@@ -12,7 +13,6 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    two_factor_enabled: bool
 
     # Get object params from attribute e.g. data.id
     class Config:

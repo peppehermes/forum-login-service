@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from main import app
+from sql import schemas
 
 client = TestClient(app)
 
@@ -12,12 +13,14 @@ def test_get_root():
 
 
 def test_post_signup_2fa_disabled():
+    user = schemas.UserCreate(email="walterwhite@gmail.com", password="SayMyName", two_factor_enabled=False)
     # Expecting Form inputs, using data parameter
     response = client.post(app.url_path_for("signup"),
-                           data={"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": "false"})
+                           # data={"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": "false"})
+                           data=user)
 
     assert response.status_code == 200
-    assert response.json() == {"username": "WalterWhite", "password": "SayMyName", "two_factor_enabled": False}
+    assert response.json() == user
 
 
 def test_post_signup_2fa_enabled():
