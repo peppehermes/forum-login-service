@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
+import logging
 
 from sql import models, crud, schemas
 from sql.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
+
+logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI()
 
@@ -36,10 +39,13 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     :param db:
     :return:
     """
+    logger.debug(f"received data: {user}")
+
     db_user = crud.get_user_by_email(db, email=user.email)
 
     # Check if provided email is already registered
     if db_user:
+        logger.debug("Error: email already registered")
         raise HTTPException(status_code=400, detail="Email already registered")
 
     return crud.create_user(db=db, user=user)

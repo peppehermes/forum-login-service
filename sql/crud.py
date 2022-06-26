@@ -14,7 +14,8 @@ def get_user_by_email(db: Session, email: str):
 def create_user(db: Session, user: schemas.UserCreate):
     # TODO make the password passing more secure
     fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    db_user = models.User(email=user.email, hashed_password=fake_hashed_password,
+                          two_factor_enabled=user.two_factor_enabled)
     db.add(db_user)
     db.commit()
 
