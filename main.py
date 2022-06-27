@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
@@ -5,7 +6,7 @@ import logging
 
 from sql import models, crud, schemas
 from sql.database import SessionLocal, engine
-from otp.otp import generate_secret
+from otp import otp
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -57,7 +58,8 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     secret = None
 
     if user.two_factor_enabled:
-        secret = generate_secret()
+        secret = otp.generate_secret()
+        logger.error(otp.generate_otp(secret))
 
     return crud.create_user(db=db, user=user, secret=secret)
 
