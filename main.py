@@ -5,6 +5,7 @@ import logging
 
 from sql import models, crud, schemas
 from sql.database import SessionLocal, engine
+from otp.otp import generate_secret
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -34,9 +35,13 @@ def root():
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Create DB session before each request in the dependency with yield, close it afterwards.
+
     Return a schemas.User model, which filters out the password param from input schemas.UserCreate.
+
     :param user:
+
     :param db:
+
     :return:
     """
     logger.debug(f"received data: {user}")
@@ -48,11 +53,23 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
         logger.debug("Error: email already registered")
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    return crud.create_user(db=db, user=user)
+    # Check if the user wants to enable 2FA
+    secret = None
+
+    if user.two_factor_enabled:
+        secret = generate_secret()
+
+    return crud.create_user(db=db, user=user, secret=secret)
 
 
 @app.post("/login/")
 async def login(username: str = Form(), password: str = Form()):
+    """
+
+    :param username:
+    :param password:
+    :return:
+    """
     response = {"username": username, "password": password}
 
     # If 2FA is enabled for this user, redirect to 2FA endpoint
@@ -63,6 +80,11 @@ async def login(username: str = Form(), password: str = Form()):
 
 @app.post("/two_factor_auth/")
 async def two_factor_auth(one_time_password: str = Form()):
+    """
+
+    :param one_time_password:
+    :return:
+    """
     response = {"one_time_password": one_time_password}
 
     return response

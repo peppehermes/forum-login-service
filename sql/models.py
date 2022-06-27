@@ -11,3 +11,4 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     two_factor_enabled = Column(Boolean, default=False)
+    secret = Column(String)
