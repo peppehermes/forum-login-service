@@ -11,14 +11,13 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate, secret=None):
+def create_user(db: Session, user: schemas.UserCreate):
     # TODO make the password passing more secure
-    fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email,
-                          hashed_password=fake_hashed_password,
-                          two_factor_enabled=user.two_factor_enabled,
-                          secret=secret,
-                          )
+    db_user = models.User(
+        email=user.email,
+        hashed_password=user.password,
+        two_factor_enabled=user.two_factor_enabled,
+    )
     db.add(db_user)
     db.commit()
 
@@ -26,3 +25,15 @@ def create_user(db: Session, user: schemas.UserCreate, secret=None):
     # e.g. the generated ID
     db.refresh(db_user)
     return db_user
+
+
+def create_login_attempt(db: Session, db_user: models.User):
+    attempt = models.LoginAttempt(user=db_user)
+    db.add(attempt)
+    db.commit()
+
+    # Refresh local instance of db_user, so that it contains any new data from the DB
+    # e.g. the generated ID
+    db.refresh(attempt)
+
+    return attempt

@@ -52,6 +52,7 @@ def test_post_signup_2fa_disabled(test_db):
     assert data["email"] == "walterwhite@gmail.com"
     assert "id" in data
     assert data["two_factor_enabled"] is False
+    assert "login_identifier" in data
 
 
 def test_post_signup_2fa_enabled(test_db):
@@ -66,6 +67,7 @@ def test_post_signup_2fa_enabled(test_db):
     assert data["email"] == "walterwhite@gmail.com"
     assert "id" in data
     assert data["two_factor_enabled"] is True
+    assert "login_identifier" in data
 
 
 def test_post_signup_already_registered(test_db):

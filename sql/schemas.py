@@ -1,4 +1,6 @@
 # Pydantic models
+import datetime
+
 from pydantic import BaseModel
 
 
@@ -17,3 +19,16 @@ class User(UserBase):
     # Get object params from attribute e.g. data.id
     class Config:
         orm_mode = True
+
+
+class UserSession(User):
+    login_identifier: str
+
+
+class VerifyOTPIn(BaseModel):
+    identifier: str
+    code: str
+
+
+class VerifyOTPOut(BaseModel):
+    status: str

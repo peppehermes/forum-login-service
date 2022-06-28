@@ -1,12 +1,12 @@
-import uvicorn
 from fastapi import FastAPI, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.responses import RedirectResponse
 import logging
 
-from sql import models, crud, schemas
+from starlette.requests import Request
+
+from auth.managers import SignupManager
+from sql import models, schemas
 from sql.database import SessionLocal, engine
-from otp import otp
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,7 +32,7 @@ def root():
 
 # Not using async because SQLAlchemy has not integrated support for using await directly.
 # Should use encode/databases to connect to DBs using async and await.
-@app.post("/signup/", response_model=schemas.User)
+@app.post("/signup/", response_model=schemas.UserSession)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Create DB session before each request in the dependency with yield, close it afterwards.
@@ -47,25 +47,12 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     logger.debug(f"received data: {user}")
 
-    db_user = crud.get_user_by_email(db, email=user.email)
-
-    # Check if provided email is already registered
-    if db_user:
-        logger.debug("Error: email already registered")
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Check if the user wants to enable 2FA
-    secret = None
-
-    if user.two_factor_enabled:
-        secret = otp.generate_secret()
-        logger.error(otp.generate_otp(secret))
-
-    return crud.create_user(db=db, user=user, secret=secret)
+    mgr = SignupManager()
+    return mgr.signup(session=db, user=user)
 
 
 @app.post("/login/")
-async def login(username: str = Form(), password: str = Form()):
+def login(username: str = Form(), password: str = Form()):
     """
 
     :param username:
@@ -80,13 +67,17 @@ async def login(username: str = Form(), password: str = Form()):
     return response
 
 
-@app.post("/two_factor_auth/")
-async def two_factor_auth(one_time_password: str = Form()):
+@app.post("/two_factor_auth/", response_model=schemas.VerifyOTPOut)
+def two_factor_auth(request: Request, body: schemas.VerifyOTPIn, db: Session = Depends(get_db)):
     """
 
-    :param one_time_password:
+    :param request:
+    :param body:
+    :param db:
     :return:
     """
-    response = {"one_time_password": one_time_password}
 
-    return response
+
+
+
+    return {"status": "OK"}
