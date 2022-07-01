@@ -1,8 +1,12 @@
 # Pydantic models
-import datetime
 from typing import Optional
 
 from pydantic import BaseModel
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
 
 
 class UserBase(BaseModel):
@@ -34,3 +38,4 @@ class VerifyOTPIn(BaseModel):
 
 class VerifyOTPOut(BaseModel):
     status: str
+    access_token: Optional[str]

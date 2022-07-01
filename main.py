@@ -1,7 +1,8 @@
 import secrets
+from typing import Union
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
-from fastapi import FastAPI, Form, Depends
+from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 import logging
 
@@ -29,14 +30,9 @@ def get_db():
         db.close()
 
 
-@app.get("/")
-def root():
-    return {"message": "Hello World!"}
-
-
 # Not using async because SQLAlchemy has not integrated support for using await directly.
 # Should use encode/databases to connect to DBs using async and await.
-@app.post("/signup/", response_model=schemas.UserSession)
+@app.post("/signup/", response_model=Union[schemas.User, schemas.VerifyOTPOut])
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Create DB session before each request in the dependency with yield, close it afterwards.
@@ -52,25 +48,41 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     logger.debug(f"received data: {user}")
 
     mgr = SignupManager()
-    return mgr.signup(session=db, user=user)
+    user_session = mgr.signup(db=db, user=user)
+
+    # If 2FA is not enabled, return status OK
+    if not user.two_factor_enabled:
+        return {"status": "OK"}
+
+    return user_session
 
 
-@app.post("/login/")
-def login(username: str = Form(), password: str = Form()):
+@app.post("/login/", response_model=Union[schemas.UserSession, schemas.VerifyOTPOut])
+def login(request: Request, user: schemas.UserLogin, db: Session = Depends(get_db)):
     """
 
-    :param username:
-    :param password:
+    :param request:
+    :param db:
+    :param user:
     :return:
     """
-    response = {"username": username, "password": password}
+    logger.debug(f"received data: {user}")
 
-    return response
+    mgr = LoginManager()
+    user_session = mgr.login(db=db, user=user)
+
+    # If 2FA is not enabled, set secure cookie and return access_token
+    if not user_session.two_factor_enabled:
+        request.session["access_token"] = secrets.token_hex(16)
+        return {"status": "OK", "access_token": request.session["access_token"]}
+
+    return user_session
 
 
 @app.post("/two_factor_auth/", response_model=schemas.VerifyOTPOut)
 def two_factor_auth(request: Request, body: schemas.VerifyOTPIn, db: Session = Depends(get_db)):
     """
+    Verify OTP for a previous login attempt.
 
     :param request:
     :param body:
@@ -78,10 +90,9 @@ def two_factor_auth(request: Request, body: schemas.VerifyOTPIn, db: Session = D
     :return:
     """
 
-    """ Verify OTP for a previous login attempt """
     logger.debug(f"received data: {body}")
 
     mgr = LoginManager()
     mgr.verify_otp(db, body.identifier, body.otp_code)
     request.session["access_token"] = secrets.token_hex(16)
-    return {"status": "OK"}
+    return {"status": "OK", "access_token": request.session["access_token"]}
