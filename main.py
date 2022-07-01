@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Form, Depends, HTTPException
+import secrets
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.requests import Request
+from fastapi import FastAPI, Form, Depends
 from sqlalchemy.orm import Session
 import logging
 
-from starlette.requests import Request
-
-from auth.managers import SignupManager
+import config
+from auth.managers import SignupManager, LoginManager
 from sql import models, schemas
 from sql.database import SessionLocal, engine
 
@@ -13,6 +15,8 @@ models.Base.metadata.create_all(bind=engine)
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI()
+
+app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY)
 
 
 # Dependency
@@ -61,9 +65,6 @@ def login(username: str = Form(), password: str = Form()):
     """
     response = {"username": username, "password": password}
 
-    # If 2FA is enabled for this user, redirect to 2FA endpoint
-    # response = RedirectResponse(url='/redirected')
-
     return response
 
 
@@ -77,7 +78,10 @@ def two_factor_auth(request: Request, body: schemas.VerifyOTPIn, db: Session = D
     :return:
     """
 
+    """ Verify OTP for a previous login attempt """
+    logger.debug(f"received data: {body}")
 
-
-
+    mgr = LoginManager()
+    mgr.verify_otp(db, body.identifier, body.otp_code)
+    request.session["access_token"] = secrets.token_hex(16)
     return {"status": "OK"}

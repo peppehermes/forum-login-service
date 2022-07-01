@@ -1,5 +1,6 @@
 # Pydantic models
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -23,11 +24,12 @@ class User(UserBase):
 
 class UserSession(User):
     login_identifier: str
+    otp_code: Optional[str]
 
 
 class VerifyOTPIn(BaseModel):
     identifier: str
-    code: str
+    otp_code: str
 
 
 class VerifyOTPOut(BaseModel):

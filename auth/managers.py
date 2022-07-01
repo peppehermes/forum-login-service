@@ -5,6 +5,7 @@ import pyotp
 
 import config
 from auth.exceptions import InvalidUserCredentials, AlreadyRegisteredUser
+from auth.otp import TOTPManager
 from auth.pwd.pwd_context import verify_password
 from sql import crud
 from sql.models import User, LoginAttempt
@@ -35,6 +36,20 @@ class LoginManager:
         session.commit()
         return attempt
 
+    @staticmethod
+    def verify_otp(db, identifier, otp_code):
+        """ Verifies OTP for a single login attempt """
+        attempt = db.query(LoginAttempt).filter_by(identifier=identifier).first()
+        conditions = [
+            attempt,
+            attempt.is_valid(),
+            TOTPManager.validate_otp(attempt.user.secret, otp_code),
+        ]
+        if not all(conditions):
+            # raise InvalidOTP
+            raise HTTPException(status_code=401, detail="Invalid OTP received")
+        return True
+
 
 class SignupManager:
     """ Manager for the signup process. Utilizes two-step TOTP checking """
@@ -56,11 +71,16 @@ class SignupManager:
 
         db_user = crud.create_user(db=session, user=user)
         login_attempt = crud.create_login_attempt(db=session, db_user=db_user)
+        otp_code = None
+        if db_user.two_factor_enabled:
+            otp_code = TOTPManager.generate_otp(db_user.secret)
 
         user_session = UserSession(
             email=db_user.email,
             id=db_user.id,
             two_factor_enabled=db_user.two_factor_enabled,
-            login_identifier=login_attempt.identifier)
+            login_identifier=login_attempt.identifier,
+            otp_code=otp_code
+        )
 
         return user_session
