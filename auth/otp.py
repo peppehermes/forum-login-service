@@ -4,19 +4,20 @@ import config
 
 
 class TOTPManager:
+    def __init__(self, user_secret: str):
+        """ Initializes TOTP manager on given user """
+        self.user_secret = user_secret
+        self.totp = pyotp.TOTP(self.user_secret, interval=config.AUTH_OTP_THRESHOLD_SECONDS)
+
     @staticmethod
     def generate_secret():
         """ Function for generating a secret for TOTP algorithm """
         return pyotp.random_base32()
 
-    @staticmethod
-    def generate_otp(user_secret):
+    def generate_otp(self):
         """ Function for generating time-based OTP """
-        totp = pyotp.TOTP(user_secret, interval=config.AUTH_OTP_THRESHOLD_SECONDS)
-        return totp.now()
+        return self.totp.now()
 
-    @staticmethod
-    def validate_otp(user_secret, otp_code):
+    def validate_otp(self, otp_code):
         """ Function for validating time-based OTP """
-        totp = pyotp.TOTP(user_secret, interval=config.AUTH_OTP_THRESHOLD_SECONDS)
-        return totp.verify(otp_code)
+        return self.totp.verify(otp_code)

@@ -43,7 +43,7 @@ class LoginManager:
         conditions = [
             attempt,
             attempt.is_valid(),
-            TOTPManager.validate_otp(attempt.user.secret, otp_code),
+            TOTPManager(user_secret=attempt.user.secret).validate_otp(otp_code),
         ]
         if not all(conditions):
             # raise InvalidOTP
@@ -73,7 +73,7 @@ class SignupManager:
         login_attempt = crud.create_login_attempt(db=session, db_user=db_user)
         otp_code = None
         if db_user.two_factor_enabled:
-            otp_code = TOTPManager.generate_otp(db_user.secret)
+            otp_code = TOTPManager(user_secret=db_user.secret).generate_otp()
 
         user_session = UserSession(
             email=db_user.email,
