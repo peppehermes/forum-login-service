@@ -76,6 +76,8 @@ def login(request: Request, user: schemas.UserLogin, db: Session = Depends(get_d
         request.session["access_token"] = secrets.token_hex(16)
         return {"status": "OK", "access_token": request.session["access_token"]}
 
+    logger.debug(f"Current OTP: {user_session.otp_code}")
+
     return user_session
 
 
