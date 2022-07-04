@@ -1,4 +1,8 @@
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent.parent.absolute()
+LOG_CONFIG = os.path.join(BASE_DIR, "config_logging.yml")
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./sql.db"
 APP_NAME = "Login OTP App"

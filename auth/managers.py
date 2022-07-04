@@ -12,10 +12,12 @@ from sqlalchemy.orm import Session
 
 
 class LoginAttemptManager:
-    """ Manager for the login attempt. Used to save a new login attempt and activate a new user session """
+    """Manager for the login attempt. Used to save a new login attempt and activate a new user session"""
 
     @staticmethod
     def generate_user_session(db: Session, db_user: User):
+        """Generate a new user session and provide login identifier and OTP code, to be used for 2FA, if enabled"""
+
         login_attempt = crud.create_login_attempt(db=db, db_user=db_user)
 
         otp_code = None
@@ -27,36 +29,41 @@ class LoginAttemptManager:
             id=db_user.id,
             two_factor_enabled=db_user.two_factor_enabled,
             login_identifier=login_attempt.identifier,
-            otp_code=otp_code
+            otp_code=otp_code,
         )
 
         return user_session
 
 
 class LoginManager:
-    """ Manager for the login process. Utilizes two-step TOTP checking """
+    """Manager for the login process. Utilizes two-step TOTP checking"""
 
     @staticmethod
     def authenticate(db: Session, user: UserLogin) -> Optional[User]:
-        """ Fetches the user from DB and validates password """
+        """Fetches the user from DB and validates password"""
+
         db_user = crud.get_user_by_email(db, email=user.email)
         if not db_user or not verify_password(user.password, db_user.hashed_password):
             return None
         return db_user
 
     def login(self, db: Session, user: UserLogin) -> UserSession:
-        """ Tries to log the user in """
+        """Tries to log the user in"""
 
         db_user = self.authenticate(db, user)
         if not db_user:
             # raise InvalidUserCredentials
-            raise HTTPException(status_code=401, detail="No user can be found matching provided credentials")
+            raise HTTPException(
+                status_code=401,
+                detail="No user can be found matching provided credentials",
+            )
 
         return LoginAttemptManager.generate_user_session(db=db, db_user=db_user)
 
     @staticmethod
     def verify_otp(db: Session, identifier, otp_code):
-        """ Verifies OTP for a single login attempt """
+        """Verifies OTP for a single login attempt"""
+
         attempt = db.query(LoginAttempt).filter_by(identifier=identifier).first()
         conditions = [
             attempt,
@@ -70,11 +77,12 @@ class LoginManager:
 
 
 class SignupManager:
-    """ Manager for the signup process. Utilizes two-step TOTP checking """
+    """Manager for the signup process. Utilizes two-step TOTP checking"""
 
     @staticmethod
     def check_email(db: Session, user: UserCreate):
-        """ Check that the provided email has not been already used """
+        """Check that the provided email has not been already used"""
+
         db_user = crud.get_user_by_email(db, email=user.email)
 
         # Check if provided email is already registered
@@ -83,7 +91,7 @@ class SignupManager:
             raise HTTPException(status_code=400, detail="Email already registered")
 
     def signup(self, db: Session, user: UserCreate) -> UserSession:
-        """ Tries to register the user """
+        """Tries to register the user"""
 
         self.check_email(db, user)
 

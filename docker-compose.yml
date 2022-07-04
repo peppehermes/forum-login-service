@@ -16,7 +16,7 @@ services:
       # power and a database with the same name. If it is not specified, then the default user of
       # postgres will be used.
       - POSTGRES_USER=postgres
-      # This environment variable is required for you to use the PostgreSQL image.
+      # This environment variable is required to use the PostgreSQL image.
       # It must not be empty or undefined. This environment variable sets the superuser
       # password for PostgreSQL. The default superuser is defined by the POSTGRES_USER environment variable.
       - POSTGRES_PASSWORD=password
@@ -24,7 +24,7 @@ services:
 
   web:
     build: .
-    command: gunicorn --bind 0.0.0.0:5000 main:app -w 4 -k main.MyUvicornWorker
+    command: gunicorn --bind 0.0.0.0:5000 main:app -w 4 -k uvicorn.workers.UvicornWorker
     depends_on:
       - db
     ports:

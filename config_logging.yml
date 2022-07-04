@@ -9,7 +9,15 @@ handlers:
   console:
     class: logging.StreamHandler
     formatter: standard
+    level: DEBUG
     stream: ext://sys.stdout
+
+  file:
+    class: logging.handlers.WatchedFileHandler
+    formatter: standard
+    filename: mylog.log
+    level: DEBUG
+
 
 loggers:
   uvicorn:
@@ -18,5 +26,5 @@ loggers:
 
 root:
   level: DEBUG
-  handlers: [console]
+  handlers: [console, file]
   propagate: no

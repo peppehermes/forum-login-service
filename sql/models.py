@@ -12,7 +12,7 @@ from auth.pwd.pwd_context import get_password_hash
 
 
 def hash_user_password(mapper, context, target):
-    """ SQLAlchemy event hook for hashing raw passwords """
+    """SQLAlchemy event hook for hashing raw passwords"""
     target.hash_password()
 
 
@@ -21,7 +21,7 @@ def make_identifier():
 
 
 class User(Base):
-    """ Describes a user entity with basic info, 2FA flag and secret fot OTP generation """
+    """Describes a user entity with basic info, 2FA flag and secret fot OTP generation"""
 
     __tablename__ = "users"
 
@@ -32,12 +32,12 @@ class User(Base):
     secret = Column(String, default=TOTPManager.generate_secret(), nullable=False)
 
     def hash_password(self):
-        """ Stores hashed password into DB instead of the raw one """
+        """Stores hashed password into DB instead of the raw one"""
         self.hashed_password = get_password_hash(self.hashed_password)
 
 
 class LoginAttempt(Base):
-    """ Describes a single registration attempt with an identifier """
+    """Describes a single login attempt with an identifier"""
 
     __tablename__ = "login_attempt"
 
@@ -56,4 +56,6 @@ class LoginAttempt(Base):
         ).seconds < config.AUTH_OTP_THRESHOLD_SECONDS
 
 
+# Register for new user creation event.
+# Hash its password before storing it
 listen(User, "before_insert", hash_user_password)

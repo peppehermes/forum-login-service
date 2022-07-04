@@ -37,10 +37,11 @@ client = TestClient(app)
 def test_signup_2fa_disabled(test_db):
     response = client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": False
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": False,
+        },
     )
 
     assert response.status_code == 200, response.text
@@ -52,10 +53,11 @@ def test_signup_2fa_disabled(test_db):
 def test_signup_2fa_enabled(test_db):
     response = client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": True
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": True,
+        },
     )
 
     assert response.status_code == 200, response.text
@@ -68,19 +70,21 @@ def test_signup_2fa_enabled(test_db):
 def test_signup_already_registered(test_db):
     client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": True
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": True,
+        },
     )
 
     # Repeat post request with same data
     response = client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": True
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": True,
+        },
     )
 
     assert response.status_code == 400, response.text
@@ -88,13 +92,76 @@ def test_signup_already_registered(test_db):
     assert data["detail"] == "Email already registered"
 
 
-def test_signup_two_factor_auth_rejected(test_db):
+def test_login_two_factor_disabled_correct_password(test_db):
     signup_response = client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": True
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": False,
+        },
+    )
+
+    assert signup_response.status_code == 200, signup_response.text
+    data = signup_response.json()
+    assert "status" in data
+    assert data["status"] == "OK"
+
+    login_response = client.post(
+        app.url_path_for("login"),
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+        },
+    )
+
+    assert login_response.status_code == 200, login_response.text
+    data = login_response.json()
+    assert "status" in data
+    assert data["status"] == "OK"
+
+    assert "access_token" in data
+
+
+def test_login_two_factor_disabled_wrong_password(test_db):
+    signup_response = client.post(
+        app.url_path_for("signup"),
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": False,
+        },
+    )
+
+    assert signup_response.status_code == 200, signup_response.text
+    data = signup_response.json()
+    assert "status" in data
+    assert data["status"] == "OK"
+
+    login_response = client.post(
+        app.url_path_for("login"),
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "test",
+        },
+    )
+
+    assert login_response.status_code == 401, login_response.text
+    data = login_response.json()
+    assert "detail" in data
+    assert data["detail"] == "No user can be found matching provided credentials"
+
+    assert "access_token" not in data
+
+
+def test_login_two_factor_enabled_wrong_otp(test_db):
+    signup_response = client.post(
+        app.url_path_for("signup"),
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": True,
+        },
     )
 
     assert signup_response.status_code == 200, signup_response.text
@@ -105,9 +172,10 @@ def test_signup_two_factor_auth_rejected(test_db):
 
     login_response = client.post(
         app.url_path_for("login"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+        },
     )
 
     assert login_response.status_code == 200, login_response.text
@@ -132,13 +200,14 @@ def test_signup_two_factor_auth_rejected(test_db):
     assert "access_token" not in data
 
 
-def test_login_two_factor_enabled(test_db):
+def test_login_two_factor_enabled_correct_otp(test_db):
     signup_response = client.post(
         app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": True
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+            "two_factor_enabled": True,
+        },
     )
 
     assert signup_response.status_code == 200, signup_response.text
@@ -151,9 +220,10 @@ def test_login_two_factor_enabled(test_db):
 
     login_response = client.post(
         app.url_path_for("login"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              },
+        json={
+            "email": "walterwhite@gmail.com",
+            "password": "SayMyName",
+        },
     )
 
     assert login_response.status_code == 200, login_response.text
@@ -182,33 +252,3 @@ def test_login_two_factor_enabled(test_db):
     assert data["status"] == "OK"
 
     assert "access_token" in data
-
-
-def test_login_two_factor_disabled(test_db):
-    signup_response = client.post(
-        app.url_path_for("signup"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              "two_factor_enabled": False
-              },
-    )
-
-    assert signup_response.status_code == 200, signup_response.text
-    data = signup_response.json()
-    assert "status" in data
-    assert data["status"] == "OK"
-
-    login_response = client.post(
-        app.url_path_for("login"),
-        json={"email": "walterwhite@gmail.com",
-              "password": "SayMyName",
-              },
-    )
-
-    assert login_response.status_code == 200, login_response.text
-    data = login_response.json()
-    assert "status" in data
-    assert data["status"] == "OK"
-
-    assert "access_token" in data
-

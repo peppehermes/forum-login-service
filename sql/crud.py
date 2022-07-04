@@ -4,15 +4,20 @@ from . import models, schemas
 
 
 def get_user(db: Session, user_id: int):
+    """Get user from DB given its ID"""
+
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
 def get_user_by_email(db: Session, email: str):
+    """Get user from DB given its email"""
+
     return db.query(models.User).filter(models.User.email == email).first()
 
 
 def create_user(db: Session, user: schemas.UserCreate):
-    # TODO make the password passing more secure
+    """Create new user and insert into DB"""
+
     db_user = models.User(
         email=user.email,
         hashed_password=user.password,
@@ -28,6 +33,8 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def create_login_attempt(db: Session, db_user: models.User):
+    """Create new login attempt and insert into DB"""
+
     attempt = models.LoginAttempt(user=db_user)
     db.add(attempt)
     db.commit()

@@ -5,13 +5,10 @@ from sqlalchemy.orm import sessionmaker
 import config
 
 SQLALCHEMY_DATABASE_URL = config.SQLALCHEMY_DATABASE_URL
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 
 def custom_create_engine(url):
-    return create_engine(
-        url, connect_args={"check_same_thread": False}
-    )
+    return create_engine(url, connect_args={"check_same_thread": False})
 
 
 # engine = custom_create_engine(SQLALCHEMY_DATABASE_URL)
