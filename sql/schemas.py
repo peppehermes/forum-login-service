@@ -36,6 +36,9 @@ class VerifyOTPIn(BaseModel):
     otp_code: str
 
 
-class VerifyOTPOut(BaseModel):
+class Response(BaseModel):
     status: str
-    access_token: Optional[str]
+
+
+class ResponseToken(Response):
+    access_token: str
