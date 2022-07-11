@@ -12,9 +12,11 @@ from auth.managers import SignupManager, LoginManager
 from sql import models, schemas
 from sql.database import SessionLocal, engine
 
+# Create all tables
 models.Base.metadata.create_all(bind=engine)
 
 
+# Read logging configuration file
 with open(config.LOG_CONFIG) as f:
     log_config = yaml.load(f, Loader=yaml.FullLoader)
     logging.config.dictConfig(log_config)

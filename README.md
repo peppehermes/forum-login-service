@@ -93,7 +93,7 @@ You will get a login session identifier for the next request, together with the
 OTP code; it is provided in this response for simplicity purposes, and it is also
 logged in the command line.
 
-Finally, check the received OTP:
+Finally, check the received OTP. It will be valid for 5 minutes:
 
 ```shell
 $ curl -X 'POST' \
